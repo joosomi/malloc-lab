@@ -238,7 +238,7 @@ int main(int argc, char **argv)
     /* Initialize the timing package */
     init_fsecs();
 
-    /*
+    /**
      * Optionally run and evaluate the libc malloc package 
      */
     if (run_libc) {
