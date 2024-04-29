@@ -17,11 +17,14 @@
 /* private variables */
 static char *mem_start_brk;  /* points to first byte of heap */
 static char *mem_brk;        /* points to last byte of heap */
-static char *mem_max_addr;   /* largest legal heap address */ 
+static char *mem_max_addr;   /* largest legal heap address 힙 최대 크기의 주소를 가리키는 변수 */
 
 /* 
  * mem_init - initialize the memory system model
  */
+
+
+// config.h => MAX_HEAP 20 MB
 void mem_init(void)
 {
     /* allocate the storage we will use to model the available VM */
