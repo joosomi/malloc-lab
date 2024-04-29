@@ -72,7 +72,8 @@ team_t team = {
 
 
 //global variable & functions
-static char *heap_listp;  // 항상 프롤로그 블록을 가리키는 Static 전역 변수
+static void *heap_listp;  // 항상 프롤로그 블록을 가리키는 Static 전역 변수
+// static char *last_bp;
 
 int mm_init(void);
 void *mm_malloc(size_t size);
@@ -97,9 +98,9 @@ int mm_init(void)
     }
 
     PUT(heap_listp, 0);
-    PUT(heap_listp + (1*WSIZE), PACK(DSIZE, 1));
-    PUT(heap_listp + (2*WSIZE), PACK(DSIZE, 1));
-    PUT(heap_listp + (3*WSIZE), PACK(0,1));
+    PUT(heap_listp + (1*WSIZE), PACK(DSIZE, 1)); //Prologue header
+    PUT(heap_listp + (2*WSIZE), PACK(DSIZE, 1)); //Prologue footer
+    PUT(heap_listp + (3*WSIZE), PACK(0,1)); //Epilogue header
     heap_listp += (2*WSIZE);
 
     /*Extend the empty heap with a free block of CHUNKSIZE bytes*/
@@ -138,19 +139,19 @@ static void *coalesce (void *bp) {
     size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
     size_t size = GET_SIZE(HDRP(bp));
 
-    //CASE 1
+    //CASE 1. 이전과 다음 블록 모두 할당
     if (prev_alloc && next_alloc) {
         return bp;
     }
 
-    //CASE2 
+    //CASE2 이전 블록 할당, 다음 블록 free
     else if (prev_alloc && !next_alloc) {
         size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
         PUT(HDRP(bp), PACK(size, 0));
         PUT(FTRP(bp), PACK(size, 0));
     }
 
-    //CASE 3
+    //CASE 3 이전 블록 free, 다음 블록 할당
     else if (!prev_alloc && next_alloc) {
         size += GET_SIZE(HDRP(PREV_BLKP(bp)));
         PUT(FTRP(bp), PACK(size, 0));
@@ -158,7 +159,7 @@ static void *coalesce (void *bp) {
         bp = PREV_BLKP(bp);
     }
 
-    //CASE4
+    //CASE4 이전, 다음 블록 모두 free
     else {
         size += GET_SIZE(HDRP(PREV_BLKP(bp))) + 
             GET_SIZE(FTRP(NEXT_BLKP(bp)));
@@ -220,32 +221,22 @@ void *mm_malloc(size_t size)
 }
 
 
-//find-fit => next_fit 
-// static void *find_fit(size_t asize){
-//     char *bp;
-// }
 
 
-//first_fit 
-// static void *find_fit(size_t asize){
-//     void *bp;
-
-//     for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)){
-//         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
-//             return bp;
-//         }
-//     }
-
-//     return NULL; /*NO fit*/
-// }
-
-//Next_fit
+// first_fit 
 static void *find_fit(size_t asize){
     void *bp;
 
-    
+    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)){
+        if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
+            return bp;
+        }
+    }
 
+    return NULL; /*NO fit*/
 }
+
+//Next_fit
 
 
 
@@ -288,9 +279,12 @@ void *mm_realloc(void *ptr, size_t size)
     size_t copySize;
     
     newptr = mm_malloc(size);
+    
     if (newptr == NULL)
       return NULL;
-    copySize = *(size_t *)((char *)oldptr - SIZE_T_SIZE);
+    copySize = GET_SIZE(HDRP(oldptr));
+    // copySize = *(size_t *)((char *)oldptr - SIZE_T_SIZE);
+    
     if (size < copySize)
       copySize = size;
     memcpy(newptr, oldptr, copySize);

@@ -25,6 +25,7 @@ static char *mem_max_addr;   /* largest legal heap address 힙 최대 크기의 
 
 
 // config.h => MAX_HEAP 20 MB
+// 할당기 초기화
 void mem_init(void)
 {
     /* allocate the storage we will use to model the available VM */
