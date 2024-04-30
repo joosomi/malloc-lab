@@ -133,7 +133,7 @@ int mm_init(void)
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL) {
         return -1;
     }
-    last_bp = (char *) heap_listp;
+    
     return 0;
 }
 
@@ -175,6 +175,7 @@ static void *coalesce (void *bp) {
 
     //CASE 1. 이전과 다음 블록 모두 할당된 상태 -> 연결 불가 
     if (prev_alloc && next_alloc) {
+        last_bp = bp;
         return bp;
     }
 
@@ -278,23 +279,6 @@ static void *find_fit(size_t asize) {
     char *bp = last_bp;
     
 
-    // for (bp=NEXT_BLKP(bp); GET_SIZE(HDRP(bp)) != 0; bp = NEXT_BLKP(bp)){
-    //     if (GET_ALLOC(HDRP(bp)) == 0 && GET_SIZE(HDRP(bp)) >= asize){
-    //         last_bp = bp;
-    //         return bp;
-    //     }
-    // }
-    // bp = heap_listp;
-    // while (bp < last_bp) {
-    //     bp = NEXT_BLKP(bp);
-
-    //     if (GET_ALLOC(HDRP(bp)) == 0 && GET_SIZE(HDRP(bp)) >= asize){
-    //         last_bp = bp;
-    //         return bp;
-    //     }
-    // }
-    // return NULL;
-
     if (last_bp == NULL) {
         last_bp = heap_listp;
     }
@@ -314,6 +298,24 @@ static void *find_fit(size_t asize) {
     }
     return NULL;
 }
+
+
+// // Best_fit
+// static void *find_fit(size_t asize){
+//     void *bp;
+
+//     void *best_fit = NULL;
+
+//     for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
+//         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
+//             if (!best_fit || GET_SIZE(HDRP(bp)) < GET_SIZE(HDRP(best_fit))) {
+//                 best_fit = bp;
+//             }
+//         }
+//     }
+//     return best_fit;
+// }
+
 
 
 /*Free*/
@@ -353,26 +355,59 @@ void mm_free(void *ptr)
 /*
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
  */
-void *mm_realloc(void *ptr, size_t size)
-{
-    void *oldptr = ptr;
-    void *newptr;
-    size_t copySize;
+// void *mm_realloc(void *ptr, size_t size)
+// {
+//     void *oldptr = ptr; // 이전 포인터 
+//     void *newptr; // 새로운 메모리 할당할 포인터 
+//     size_t copySize;
     
-    newptr = mm_malloc(size);
+//     newptr = mm_malloc(size);
     
-    if (newptr == NULL)
-      return NULL;
-    copySize = GET_SIZE(HDRP(oldptr));
-    // copySize = *(size_t *)((char *)oldptr - SIZE_T_SIZE);
+//     if (newptr == NULL)
+//       return NULL;
+//     copySize = GET_SIZE(HDRP(oldptr));
+//     // copySize = *(size_t *)((char *)oldptr - SIZE_T_SIZE);
     
-    if (size < copySize)
-      copySize = size;
-    memcpy(newptr, oldptr, copySize);
-    mm_free(oldptr);
-    return newptr;
-}
+//     if (size < copySize)
+//       copySize = size;
+//     memcpy(newptr, oldptr, copySize);
+//     mm_free(oldptr);
+//     return newptr;
+// }
 
+
+
+void *mm_realloc(void *ptr, size_t size){
+
+    void *oldptr = ptr; // 이전 포인터
+    void *newptr; //새로운 메모리 할당할 포인터
+
+    size_t origin_size = GET_SIZE(HDRP(oldptr));
+    size_t new_size = size + DSIZE;
+
+    if (new_size <= origin_size){
+        return oldptr;
+    }
+    else {
+        size_t add_size = origin_size + GET_SIZE(HDRP(NEXT_BLKP(oldptr)));
+        if (!GET_ALLOC(HDRP(NEXT_BLKP(oldptr))) && (new_size <= add_size)) {
+            PUT(HDRP(oldptr), PACK(add_size, 1));
+            PUT(FTRP(oldptr), PACK(add_size, 1));
+            return oldptr;
+        }
+        else {
+            newptr = mm_malloc(new_size);
+            if (newptr == NULL){
+                return NULL;
+            }
+            memmove(newptr, oldptr, new_size);
+            mm_free(oldptr);
+            return newptr;
+        }
+    }
+
+
+}
 
 
 
