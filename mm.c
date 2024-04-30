@@ -226,12 +226,14 @@ void *mm_malloc(size_t size)
     
     /*Adjust block size to include overhead and alignment reqs*/
      //size가 8바이트(double word) 보다 작으면 asize를 16바이트로 만듦
+     //최소 블록 크기 16 바이트 할당 ( 헤더 4, 푸터 4, 저장공간 8)
     if (size <= DSIZE){
         asize = 2*DSIZE;
     }
    //요청받은 크기가 8바이트 보다 크다면
    //
     else {
+        //8의 배수로 올림 처리
         asize = DSIZE * ((size + (DSIZE) + (DSIZE -1)) / DSIZE);
     }
 
@@ -239,8 +241,8 @@ void *mm_malloc(size_t size)
     /*Search the free list for a fit */
     // 할당할 수 있는 가용 영역이 있다면
     if ((bp = find_fit(asize)) != NULL ) {
-        place(bp, asize);
-        return bp;
+        place(bp, asize); //할당
+        return bp; //새로 할당된 블록의 포인터 return
     }
 
     /*No fit found. Get more memory and place the block*/
@@ -316,8 +318,11 @@ static void *find_fit(size_t asize) {
 
 /*Free*/
 static void place(void *bp, size_t asize) {
-    size_t csize = GET_SIZE(HDRP(bp));
+    size_t csize = GET_SIZE(HDRP(bp)); //현재 블록의 크기
 
+
+    //현재 블록의 크기 - 선택한 가용 블록 
+    //차이가 16보다 같거나 크면 
     if ((csize - asize) >= (2*DSIZE)) {
         PUT(HDRP(bp), PACK(asize,1 ));
         PUT(FTRP(bp), PACK(asize,1 ));
