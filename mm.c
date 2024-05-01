@@ -348,7 +348,7 @@ void mm_free(void *ptr)
     PUT(HDRP(ptr), PACK(size, 0));
     PUT(FTRP(ptr), PACK(size, 0));
 
-    //만약 앞 뒤 블록이 둘 다 free라면 연결
+    //-> 연결할 수 있으면 연결해준다.
     coalesce(ptr);
 }
 
