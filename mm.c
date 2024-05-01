@@ -84,8 +84,11 @@ team_t team = {
 
 /*Given block ptr bp, compute address of next, and previous blocks*/
 //NEXT_BLKP: 지금 블록의 bp(페이로드의 주소)
+    //현재 블록의 헤더로 이동해서 GET_SIZE 매크로를 사용해서 블록의 크기를 가져와서
+    //현재 블록의 시작 주소 + 현재 블록의 크기 => 다음 블록을 가리키도록.
 //PREV_BLKP: 이전 블록의 bp
-// 
+    //GET_SIZE(((char *)(bp) - DSIZE)) : 이전 블록의 푸터에서 size 정보를 가져와서 
+    //현재  블록 시작 주소에서 이전 블록의 크기를 빼서 이전 블록의 시작 주소를 구함
 #define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)(bp) - WSIZE)))
 #define PREV_BLKP(bp) ((char *)(bp) - GET_SIZE(((char *)(bp) - DSIZE)))
 
