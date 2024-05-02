@@ -101,7 +101,7 @@ void putFreeBlock(void *);
 static char *heap_listp; // points to the prologue block or first block
 static char *free_listp; // 명시적 가용 리스트의 시작 부분
 
-static void *last_bp = NULL; // NEXT_FIT
+//static void *last_bp = NULL; // NEXT_FIT
 
 /* 
  * mm_init - initialize the malloc package.
@@ -400,7 +400,7 @@ void *mm_realloc(void *ptr, size_t size) {
 
 ////////////////////////////////////////////////////////////////////////
 
-// 새로 반환되거나 생성된 Free 블록을 가용리스트 맨 앞에 추가함.
+// 새로 반환되거나 생성된 Free 블록을 Free List 맨 앞에 추가함.
 void putFreeBlock(void *bp){
     PREDP(bp) = NULL;
     SUCCP(bp) = free_listp;
