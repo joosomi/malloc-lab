@@ -309,42 +309,43 @@ void *mm_malloc(size_t size)
 
 // next_fit이 점수가 제일 좋다.
 
-static void *find_fit(size_t asize) {
-    char *bp = last_bp; // 마지막으로 참조된 bp
+// static void *find_fit(size_t asize) {
+//     char *bp = last_bp; // 마지막으로 참조된 bp
     
-    //이전에 참조된 블록이 없는 경우, 
-    // Heap의 시작 지점을 할당
-    if (last_bp == NULL) {
-        last_bp = heap_listp;
-    }
+//     //이전에 참조된 블록이 없는 경우, 
+//     // Heap의 시작 지점을 할당
+//     if (last_bp == NULL) {
+//         last_bp = heap_listp;
+//     }
 
-    //1. 마지막으로 참조된 bp에서부터 리스트의 끝까지 탐색
-    //last_bp에서 시작하여, 
-    //힙의 끝에 도달할 때까지 -> GET_SIZE(HDRP(bp)) > 0 이 False가 될 때까지
-    //bp를 NEXT_BLKP(bp) -> bp를 다음 블록으로 이동시키겠음.
-    for (bp = last_bp; GET_SIZE(HDRP(bp)) >0; bp = NEXT_BLKP(bp)) {
-        // 가용 상태이고, 요청된 크기보다 크거나 작은 블록을 찾았으면
-        if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
-            last_bp = bp; //현재 블록을 마지막으로 참조된 블록으로 update
-            return bp;
-        }
-    }
+//     //1. 마지막으로 참조된 bp에서부터 리스트의 끝까지 탐색
+//     //last_bp에서 시작하여, 
+//     //힙의 끝에 도달할 때까지 -> GET_SIZE(HDRP(bp)) > 0 이 False가 될 때까지
+//     //bp를 NEXT_BLKP(bp) -> bp를 다음 블록으로 이동시키겠음.
+//     for (bp = last_bp; GET_SIZE(HDRP(bp)) >0; bp = NEXT_BLKP(bp)) {
+//         // 가용 상태이고, 요청된 크기보다 크거나 작은 블록을 찾았으면
+//         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
+//             last_bp = bp; //현재 블록을 마지막으로 참조된 블록으로 update
+//             return bp;
+//         }
+//     }
 
-    //2. 리스트의 시작부터, 
-    //마지막 할당 위치까지 탐색
-    for (bp = heap_listp; bp <= last_bp ; bp = NEXT_BLKP(bp)) {
-        //가용 상태이고, 요청된 크기보다 크거나 같은 블록 찾았으면
-        if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
-            last_bp = bp;
-            return bp;
-        }
-    }
-    return NULL; //적절한 블록을 찾지 못했으면 NULL 반환
-}
+//     //2. 리스트의 시작부터, 
+//     //마지막 할당 위치까지 탐색
+//     for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0 && last_bp > bp; bp = NEXT_BLKP(bp)){
+//     // for (bp = heap_listp; bp <= last_bp ; bp = NEXT_BLKP(bp)) {
+//         //가용 상태이고, 요청된 크기보다 크거나 같은 블록 찾았으면
+//         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
+//             last_bp = bp;
+//             return bp;
+//         }
+//     }
+//     return NULL; //적절한 블록을 찾지 못했으면 NULL 반환
+// }
 
 
-// // Best_fit: 요청된 크기와 가장 잘 맞는 블록을 찾아서 할당하는 방식.
-// // 메모리 낭비 최소화  but 매번 적절한 블록을 찾기 위해 전체 힙을 탐색 -> 시간 길어짐
+// Best_fit: 요청된 크기와 가장 잘 맞는 블록을 찾아서 할당하는 방식.
+// 메모리 낭비 최소화  but 매번 적절한 블록을 찾기 위해 전체 힙을 탐색 -> 시간 길어짐
 // static void *find_fit(size_t asize){
 //     void *bp;
 
@@ -370,6 +371,28 @@ static void *find_fit(size_t asize) {
 //     // 가장 적합한 블록 봔환, 못찾았다면 NULL
 //     return best_fit;
 // }
+
+// BEST_FIT
+// asize에 가장 적합한 가용 블록 찾아서 반환
+static void *find_fit(size_t asize) {
+    void *bp; 
+    void *best_fit = NULL; // 가장 적합한 블록을 가리키는 포인터
+
+    //힙의 모든 블록 탐색
+    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
+        //현재 블록이 할당되지 않았고, 요청한 크기보다 크거나 같은 경우
+        if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
+            //아직 best fit이 선택되지 않은 경우 (루프 처음 돌 때)
+            // || 현재 블록의 크기가 best_fit으로 선택된 블록의 크기 보다 작을 떄 best_fit update
+            if (!best_fit || GET_SIZE(HDRP(bp)) < GET_SIZE(HDRP(best_fit))) {
+                best_fit = bp;
+            }
+        }
+    }
+    return best_fit;
+}
+
+
 
 
 
